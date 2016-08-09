@@ -1,0 +1,54 @@
+#!/bin/bash
+# Find a working census stream
+
+MAX_STREAM=50
+DEBUG=0
+
+function do_sleep {
+    sleep $(($RANDOM%10))
+}
+
+function report_domain {
+    if [ $DEBUG -eq 1 ];
+    then
+        echo "Domain $1 is invalid. Try tweaking the stream params."
+    fi
+}
+
+while [ 1 ];
+do
+    stream=$(($RANDOM%$MAX_STREAM))
+    domain="stream${stream}.census.abs.gov.au"
+    
+    domain_valid=$(dig +short $domain)
+
+    if [ $? -ne 0 ];
+    then
+        report_domain $domain
+        do_sleep
+        continue
+    else
+        if [ -z "$domain_valid" ];
+        then
+            report_domain $domain
+            do_sleep
+            continue
+        fi
+    fi
+
+    res=$(curl -sS https://${domain}/eCensusWeb/login.jsp | grep 'code 9')
+
+    if [ $DEBUG -eq 1 ];
+    then
+        echo "Page result"
+        echo "$res"
+    fi
+
+    if [ -z "$res" ];
+    then
+        echo "Stream ${stream} is working!"
+        exit 0
+    fi
+
+    do_sleep;
+done
