@@ -22,3 +22,10 @@ Run the script...
 ```
 
 ...sit back and relax.
+
+## Disclaimer
+
+This software is provided AS IS. No warranty or support is provided with
+this software. The author takes no responsibility for any damages caused
+by or with the use of this software. It is the responsibility of the
+operator to ensure they are within their rights to operate this software.

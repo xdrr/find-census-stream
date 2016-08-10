@@ -5,7 +5,7 @@ MAX_STREAM=50
 DEBUG=0
 
 function do_sleep {
-    sleep $(($RANDOM%10))
+    sleep $(($RANDOM%30))
 }
 
 function report_domain {
@@ -18,8 +18,13 @@ function report_domain {
 while [ 1 ];
 do
     stream=$(($RANDOM%$MAX_STREAM))
+
+    if [ $stream -lt 10 ];
+    then
+        stream="0${stream}"
+    fi
+
     domain="stream${stream}.census.abs.gov.au"
-    
     domain_valid=$(dig +short $domain)
 
     if [ $? -ne 0 ];
@@ -36,7 +41,19 @@ do
         fi
     fi
 
-    res=$(curl -sS https://${domain}/eCensusWeb/login.jsp | grep 'code 9')
+    url="https://${domain}/eCensusWeb/login.jsp"
+    res=$(curl -sS \
+       -H "Referer: https://${domain}/eCensusWeb/welcome.jsp" \
+       -d 'vf=1' \
+       -d 'pcsf=true' \
+       -d "vipUrl=https://${domain}" \
+       -d 'primaryStreamNumber=1' \
+       -d 'primaryServerNumber=1' \
+       -d "primaryUrl=https://${domain}" \
+       -d "currentUrl=https://${domain}" \
+       ${url})
+
+    error=$(echo $res | grep 'The system is very busy at the moment.')
 
     if [ $DEBUG -eq 1 ];
     then
@@ -44,9 +61,10 @@ do
         echo "$res"
     fi
 
-    if [ -z "$res" ];
+    if [ -z "$error" ];
     then
         echo "Stream ${stream} is working!"
+        echo "Try HTTP POST to ${url}"
         exit 0
     fi
 
